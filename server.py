@@ -1,14 +1,18 @@
 import socket
 import threading
+
+from click import command
 import chat_updater
 import time
+
+import server_commands
 
 SERVER = "localhost"
 PORT = 999
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
-LEAVE_MESSAGE = "!leave"
 CHANNEL_NAME = "#chat-room"
+LEAVE_MESSAGE = "!leave"
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,14 +41,24 @@ def handle_client(conn, addr):
             if not msg:
                 break
 
+            msg_is_command = False
             if msg == LEAVE_MESSAGE:
                 connected = False
 
+            elif msg in server_commands.commands_list:
+                msg_is_command = True
+
             print(f"{nicknames[str(addr)]}: {msg}")
             with clients_lock:
+                msg_output = f"<{nicknames[str(addr)]}>  {msg}"
+
+                if msg_is_command:
+                    msg_output += server_commands.commands_output(
+                        msg, nicknames)
+
                 for client in clients:
                     client.sendall(
-                        f"<{nicknames[str(addr)]}>  {msg}".encode(FORMAT))
+                        msg_output.encode(FORMAT))
 
     except socket.error as e:
         with clients_lock:
