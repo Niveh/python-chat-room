@@ -1,7 +1,6 @@
 import socket
 import threading
 
-from click import command
 import chat_updater
 import time
 
